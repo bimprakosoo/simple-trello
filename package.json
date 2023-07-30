@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next-tools/dynamic": "^0.0.11",
     "@types/node": "20.4.5",
     "@types/react": "18.2.17",
     "@types/react-beautiful-dnd": "^13.1.4",

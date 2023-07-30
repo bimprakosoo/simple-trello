@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
 import Column from './Column';
+import dynamic from "next/dynamic";
 
 interface Card {
   id: string;
@@ -74,27 +75,7 @@ const Board: React.FC = () => {
               >
                 <h3>{column.title}</h3>
                 {column.cards.map((card, index) => (
-                  <Draggable key={card.id} draggableId={card.id} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{
-                          userSelect: 'none',
-                          padding: '16px',
-                          margin: '8px',
-                          backgroundColor: 'white',
-                          border: '1px solid gray',
-                          borderRadius: '4px',
-                          width: '100%',
-                          ...provided.draggableProps.style,
-                        }}
-                      >
-                        {card.text}
-                      </div>
-                    )}
-                  </Draggable>
+                  <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} />
                 ))}
                 {provided.placeholder}
               </div>
@@ -105,5 +86,9 @@ const Board: React.FC = () => {
     </DragDropContext>
   );
 };
+
+const DynamicDraggable = dynamic(() => import('./DraggableCard'), {
+  ssr: false,
+});
 
 export default Board;
