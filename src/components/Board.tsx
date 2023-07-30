@@ -1,7 +1,8 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
 import Column from "@/components/Column";
 import dynamic from "next/dynamic";
+import { db } from '../../firebaseConfig';
 
 interface Card {
   id: string;
@@ -14,17 +15,11 @@ interface Column {
   cards: Card[];
 }
 
-const initialColumns: Column[] = [
-  {
-    id: 'todo',
-    title: 'Todo',
-    cards: [{ id: '1', text: 'Card 1' }, { id: '2', text: 'Card 2' }, { id: '3', text: 'Card 3' }],
-  },
-  { id: 'progress', title: 'Progress', cards: [] },
-  { id: 'done', title: 'Done', cards: [] },
-  ];
+interface Props {
+  initialColumns: Column[];
+}
 
-const Board: React.FC = () => {
+const Board: React.FC<Props> = ({ initialColumns }) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [newCardDescription, setNewCardDescription] = useState<string>('');
@@ -40,19 +35,59 @@ const Board: React.FC = () => {
       return;
     }
 
-    const sourceColumn = columns.find((column) => column.id === source.droppableId);
-    const destinationColumn = columns.find((column) => column.id === destination.droppableId);
+    const sourceColumnId = source.droppableId;
+    const destinationColumnId = destination.droppableId;
+    const draggedCardId = columns.find((column) => column.id === sourceColumnId)?.cards[source.index].id;
+
+    if (!draggedCardId || !sourceColumnId || !destinationColumnId) {
+      return;
+    }
+
+    // Move the card in the state
+    const sourceColumn = columns.find((column) => column.id === sourceColumnId);
+    const destinationColumn = columns.find((column) => column.id === destinationColumnId);
     const draggedCard = sourceColumn?.cards[source.index];
 
     if (!sourceColumn || !destinationColumn || !draggedCard) {
       return;
     }
 
+    // Remove the card from the source column
     sourceColumn.cards.splice(source.index, 1);
 
+    // Add the card to the destination column at the specified index
+    if (!destinationColumn.cards) {
+      destinationColumn.cards = [];
+    }
     destinationColumn.cards.splice(destination.index, 0, draggedCard);
 
     setColumns([...columns]);
+
+    // Update the card positions in Firebase
+    const updatedTodoCards = columns.find((column) => column.id === 'todo')?.cards || [];
+    const updatedProgressCards = columns.find((column) => column.id === 'progress')?.cards || [];
+    const updatedDoneCards = columns.find((column) => column.id === 'done')?.cards || [];
+
+    db.collection('columns')
+      .doc('todo')
+      .update({ cards: updatedTodoCards })
+      .catch((error) => {
+        console.error('Error updating todo document:', error);
+      });
+
+    db.collection('columns')
+      .doc('progress')
+      .update({ cards: updatedProgressCards })
+      .catch((error) => {
+        console.error('Error updating progress document:', error);
+      });
+
+    db.collection('columns')
+      .doc('done')
+      .update({ cards: updatedDoneCards })
+      .catch((error) => {
+        console.error('Error updating done document:', error);
+      });
   };
 
   const handleAddCard = () => {
@@ -66,30 +101,58 @@ const Board: React.FC = () => {
   const handleModalSubmit = () => {
     if (newCardDescription.trim() !== '') {
       const newCard: Card = { id: Date.now().toString(), text: newCardDescription };
-      const todoColumnIndex = columns.findIndex((column) => column.id === 'todo');
 
-      if (todoColumnIndex !== -1) {
-        const updatedTodoColumn = {
-          ...columns[todoColumnIndex],
-          cards: [...columns[todoColumnIndex].cards, newCard],
-        };
+      // Update the state to include the new card
+      const updatedTodoColumn = { ...columns[0], cards: [...columns[0].cards, newCard] };
+      const updatedColumns = [...columns];
+      updatedColumns[0] = updatedTodoColumn;
+      setColumns(updatedColumns);
 
-        const updatedColumns = [...columns];
-        updatedColumns[todoColumnIndex] = updatedTodoColumn;
-
-        setColumns(updatedColumns);
-      }
+      // Save the new card to Firestore
+      db.collection('columns')
+        .doc('todo')
+        .set({ cards: updatedTodoColumn.cards }, { merge: true }) // Save the 'cards' array directly under the 'todo' document
+        .catch((error) => {
+          console.error('Error updating document:', error);
+        });
     }
 
     setNewCardDescription('');
     setShowModal(false);
   };
 
+  useEffect(() => {
+    // Fetch the data from Firebase and update the state on the client-side
+    async function fetchData() {
+      try {
+        const todoSnapshot = await db.collection('columns').doc('todo').get();
+        const progressSnapshot = await db.collection('columns').doc('progress').get();
+        const doneSnapshot = await db.collection('columns').doc('done').get();
+
+        const todoCards = todoSnapshot.exists ? todoSnapshot.data()?.cards : [];
+        const progressCards = progressSnapshot.exists ? progressSnapshot.data()?.cards : [];
+        const doneCards = doneSnapshot.exists ? doneSnapshot.data()?.cards : [];
+
+        const updatedColumns = [
+          { id: 'todo', title: 'Todo', cards: todoCards },
+          { id: 'progress', title: 'Progress', cards: progressCards },
+          { id: 'done', title: 'Done', cards: doneCards },
+        ];
+
+        setColumns(updatedColumns);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    }
+
+    fetchData();
+  }, []);
+
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-          {columns.map((column) => (
+          {columns?.map((column) => (
             <Droppable droppableId={column.id} key={column.id}>
               {(provided) => (
                 <div
@@ -108,7 +171,7 @@ const Board: React.FC = () => {
                   }}
                 >
                   <h3>{column.title}</h3>
-                  {column.cards.map((card, index) => (
+                  {column?.cards?.map((card, index) => (
                     <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} />
                   ))}
                   {provided.placeholder}
@@ -161,6 +224,30 @@ const Board: React.FC = () => {
       )}
     </>
   );
+};
+
+export const getServerSideProps = async () => {
+  try {
+    // Fetch the data from Firebase
+    const todoSnapshot = await db.collection('columns').doc('todo').get();
+    const progressSnapshot = await db.collection('columns').doc('progress').get();
+    const doneSnapshot = await db.collection('columns').doc('done').get();
+
+    const todoCards = todoSnapshot.exists ? todoSnapshot.data()?.cards : [];
+    const progressCards = progressSnapshot.exists ? progressSnapshot.data()?.cards : [];
+    const doneCards = doneSnapshot.exists ? doneSnapshot.data()?.cards : [];
+
+    const initialColumns = [
+      { id: 'todo', title: 'Todo', cards: todoCards },
+      { id: 'progress', title: 'Progress', cards: progressCards },
+      { id: 'done', title: 'Done', cards: doneCards },
+    ];
+
+    return { props: { initialColumns } };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return { props: { initialColumns: [] } };
+  }
 };
 
 const DynamicDraggable = dynamic(() => import('./DraggableCard'), {
