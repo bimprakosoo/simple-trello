@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { DragDropContext, DropResult, Droppable, Draggable } from "react-beautiful-dnd";
-import Column from "@/components/Column";
+// import Column from "@/components/Column";
 import dynamic from "next/dynamic";
 import { db } from '../../firebaseConfig';
 
@@ -172,7 +172,7 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
                 >
                   <h3>{column.title}</h3>
                   {column?.cards?.map((card, index) => (
-                    <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} />
+                    <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} id={card.id}/>
                   ))}
                   {provided.placeholder}
                   {column.id === 'todo' && (
