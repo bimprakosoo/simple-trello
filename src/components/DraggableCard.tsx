@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Draggable } from 'react-beautiful-dnd';
-import { db } from '../../firebaseConfig';
+import { updateCardDescription } from "@/firebase/firebaseUtils";
 
 interface DraggableCardProps {
   draggableId: string;
@@ -9,7 +9,7 @@ interface DraggableCardProps {
   id: string;
 }
 
-const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text }) => {
+const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text, id }) => {
   const [cardText, setCardText] = useState(text);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -27,42 +27,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text 
 
   const handleSave = async () => {
     try {
-      const todoDocRef = db.collection('columns').doc('todo');
-      const progressDocRef = db.collection('columns').doc('progress');
-      const doneDocRef = db.collection('columns').doc('done');
-
-      // Use a Firestore transaction to update the card's description
-      await db.runTransaction(async (transaction) => {
-        // Fetch the current data of the documents
-        const todoDoc = await transaction.get(todoDocRef);
-        const progressDoc = await transaction.get(progressDocRef);
-        const doneDoc = await transaction.get(doneDocRef);
-
-        // Check if the card exists in the "cards" array
-        const todoCards = todoDoc.exists ? todoDoc.data()?.cards : [];
-        const progressCards = todoDoc.exists ? progressDoc.data()?.cards : [];
-        const doneCards = todoDoc.exists ? doneDoc.data()?.cards : [];
-        const todoCardIndex = todoCards.findIndex((card: DraggableCardProps) => card.id === draggableId);
-        const progressCardIndex = progressCards.findIndex((card: DraggableCardProps) => card.id === draggableId);
-        const doneCardIndex = doneCards.findIndex((card: DraggableCardProps) => card.id === draggableId);
-
-
-        // Update the card's description if it exists in the "cards" array
-        if (todoCardIndex !== -1) {
-          const updatedTodoCards = [...todoCards];
-          updatedTodoCards[todoCardIndex] = { ...updatedTodoCards[todoCardIndex], text: cardText };
-          transaction.update(todoDocRef, { cards: updatedTodoCards });
-        } else if (progressCardIndex !== -1) {
-          const updatedProgressCards = [...progressCards];
-          updatedProgressCards[progressCardIndex] = { ...updatedProgressCards[progressCardIndex], text: cardText };
-          transaction.update(progressDocRef, { cards: updatedProgressCards });
-        } else if (doneCardIndex !== -1) {
-          const updatedDoneCards = [...doneCards];
-          updatedDoneCards[doneCardIndex] = { ...updatedDoneCards[doneCardIndex], text: cardText };
-          transaction.update(doneDocRef, { cards: updatedDoneCards });
-        }
-      });
-
+      await updateCardDescription({ id, draggableId, cardText }); // Call the function
       setIsEditing(false); // Close the modal after updating the description
     } catch (error) {
       console.error('Error updating card description:', error);
@@ -90,7 +55,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text 
             ...provided.draggableProps.style,
           }}
         >
-          <div contentEditable={!isEditing} onBlur={handleChange}>
+          <div onBlur={handleChange}>
             {cardText}
           </div>
           <button onClick={openModal}>Edit</button>
