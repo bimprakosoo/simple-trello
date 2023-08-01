@@ -1,12 +1,14 @@
 // pages/index.tsx
-import React from 'react';
+import React, {useState} from 'react';
 import Board from '../src/components/Board';
 
 const HomePage: React.FC = () => {
+  const [columns] = useState([]);
+
   return (
     <div>
-      <h1>Welcome to My Drag and Drop Todo List</h1>
-      <Board />
+      <h1>Track Your Task</h1>
+      <Board initialColumns={columns} />
     </div>
   );
 };

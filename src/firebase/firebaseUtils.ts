@@ -53,9 +53,9 @@ export const updateCardDescription = async ({ draggableId, cardText }: Draggable
       const doneDoc = await transaction.get(doneDocRef);
 
       // Check if the card exists in the "cards" array
-      const todoCards = todoDoc.exists ? todoDoc.data()?.cards : [];
-      const progressCards = todoDoc.exists ? progressDoc.data()?.cards : [];
-      const doneCards = todoDoc.exists ? doneDoc.data()?.cards : [];
+      const todoCards = todoDoc.exists ? todoDoc.data()?.cards || [] : [];
+      const progressCards = progressDoc.exists ? progressDoc.data()?.cards || [] : [];
+      const doneCards = doneDoc.exists ? doneDoc.data()?.cards || [] : [];
       const todoCardIndex = todoCards.findIndex((card: DraggableCardProps) => card.id === draggableId);
       const progressCardIndex = progressCards.findIndex((card: DraggableCardProps) => card.id === draggableId);
       const doneCardIndex = doneCards.findIndex((card: DraggableCardProps) => card.id === draggableId);

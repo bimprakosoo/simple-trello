@@ -81,7 +81,11 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
       const newCard: Card = { id: Date.now().toString(), text: newCardDescription };
 
       // Update the state to include the new card
-      const updatedTodoColumn = { ...columns[0], cards: [...columns[0].cards, newCard] };
+      const todoColumn = columns[0];
+      const updatedTodoColumn = {
+        ...todoColumn,
+        cards: Array.isArray(todoColumn.cards) ? [...todoColumn.cards, newCard] : [newCard],
+      };
       const updatedColumns = [...columns];
       updatedColumns[0] = updatedTodoColumn;
       setColumns(updatedColumns);
