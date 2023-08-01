@@ -1,7 +1,10 @@
-import React, {useEffect, useState} from "react";
-import { DragDropContext, DropResult, Droppable } from "react-beautiful-dnd";
+import React, {useEffect, useState, Fragment} from "react";
+import "tailwindcss/tailwind.css";
+import {DragDropContext, DropResult, Droppable} from "react-beautiful-dnd";
 import dynamic from "next/dynamic";
-import { updateColumnCards, addCard, fetchDataColumn } from "@/firebase/firebaseUtils";
+import {updateColumnCards, addCard, fetchDataColumn} from "@/firebase/firebaseUtils";
+import {Dialog, Transition} from "@headlessui/react";
+import '../../assets/css/style.css';
 
 interface Card {
   id: string;
@@ -18,13 +21,13 @@ interface Props {
   initialColumns: Column[];
 }
 
-const Board: React.FC<Props> = ({ initialColumns }) => {
+const Board: React.FC<Props> = ({initialColumns}) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [newCardDescription, setNewCardDescription] = useState<string>('');
 
   const handleDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
+    const {source, destination} = result;
 
     if (!destination) {
       return;
@@ -72,13 +75,17 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
     setShowModal(true);
   }
 
+  function closeModal() {
+    setShowModal(false)
+  }
+
   const handleModalInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setNewCardDescription(event.target.value);
   };
 
   const handleModalSubmit = () => {
     if (newCardDescription.trim() !== '') {
-      const newCard: Card = { id: Date.now().toString(), text: newCardDescription };
+      const newCard: Card = {id: Date.now().toString(), text: newCardDescription};
 
       // Update the state to include the new card
       const todoColumn = columns[0];
@@ -105,9 +112,9 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
       const doneCards = await fetchDataColumn('done');
 
       const updatedColumns = [
-        { id: 'todo', title: 'Todo', cards: todoCards },
-        { id: 'progress', title: 'Progress', cards: progressCards },
-        { id: 'done', title: 'Done', cards: doneCards },
+        {id: 'todo', title: 'Todo', cards: todoCards},
+        {id: 'progress', title: 'Progress', cards: progressCards},
+        {id: 'done', title: 'Done', cards: doneCards},
       ];
       setColumns(updatedColumns);
     };
@@ -118,24 +125,14 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+        <div style={{display: 'flex', justifyContent: 'center', marginTop: '20px'}}>
           {columns?.map((column) => (
             <Droppable droppableId={column.id} key={column.id}>
               {(provided) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  style={{
-                    border: '1px solid gray',
-                    borderRadius: '4px',
-                    padding: '8px',
-                    margin: '8px',
-                    minWidth: '200px',
-                    minHeight: '300px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
+                  className="custom-dragable-card"
                 >
                   <h3>{column.title}</h3>
                   {column?.cards?.map((card, index) => (
@@ -143,7 +140,7 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
                   ))}
                   {provided.placeholder}
                   {column.id === 'todo' && (
-                    <button onClick={handleAddCard} style={{ marginTop: '8px' }}>
+                    <button onClick={handleAddCard} style={{marginTop: '8px'}}>
                       + Add a card
                     </button>
                   )}
@@ -155,40 +152,61 @@ const Board: React.FC<Props> = ({ initialColumns }) => {
       </DragDropContext>
 
       {/* Modal */}
-      {showModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <div
-            style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '4px',
-              width: '300px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            }}
+      <Transition appear show={showModal} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={closeModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
           >
-            <input
-              type="text"
-              value={newCardDescription}
-              onChange={handleModalInputChange}
-              placeholder="Enter description..."
-              style={{ marginBottom: '10px', width: '100%', padding: '8px', borderRadius: '4px' }}
-            />
-            <button onClick={handleModalSubmit}>Add Card</button>
+            <div className="fixed inset-0 bg-black bg-opacity-25"/>
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel
+                  className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                    Add New Task
+                  </Dialog.Title>
+                  <div className="mt-2">
+                    <input type='text' value={newCardDescription} onChange={handleModalInputChange}
+                           placeholder='Enter description...'
+                           style={{marginBottom: '10px', width: '100%', padding: '8px', borderRadius: '4px',}}/>
+                  </div>
+                  <div className="mt-4 flex space-x-5">
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={handleModalSubmit}>
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex justify-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      onClick={closeModal}>
+                      Cancel
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
           </div>
-        </div>
-      )}
+        </Dialog>
+      </Transition>
     </>
   );
 };

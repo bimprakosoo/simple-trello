@@ -1,0 +1,18 @@
+/* assets/css/style.css */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Add your custom styles here */
+.custom-dragable-card {
+  border: 1px solid gray;
+  border-radius: 10px;
+  padding: 8px;
+  margin: 8px;
+  min-width: 200px;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: lightskyblue;
+}
