@@ -32,7 +32,6 @@ A simple trello clone to track your task using Next.js, React Drag and Drop, and
 
 ## Start the Development Server
 
-### Generate an OpenAI API key
 1. Run `npm run dev`
 
 2. Open http://localhost:3000 in your browser to view the app.
