@@ -132,8 +132,7 @@ const Board: React.FC<Props> = ({initialColumns}) => {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="custom-dragable-card"
-                >
+                  className="custom-column">
                   <h3>{column.title}</h3>
                   {column?.cards?.map((card, index) => (
                     <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} id={card.id}/>

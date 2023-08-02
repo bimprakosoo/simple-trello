@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, {Fragment, useState} from 'react';
 import { Draggable } from 'react-beautiful-dnd';
 import { updateCardDescription } from "@/firebase/firebaseUtils";
+import { VscEdit } from "react-icons/vsc";
+import {Dialog, Transition} from "@headlessui/react";
 
 interface DraggableCardProps {
   draggableId: string;
@@ -38,60 +40,71 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text,
     <Draggable draggableId={draggableId} index={index}>
       {(provided, snapshot) => (
         <>
-        <div
+        <div className='custom-draggable-card'
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          style={{
-            userSelect: 'none',
-            padding: '16px',
-            margin: '8px',
-            backgroundColor: snapshot.isDragging ? 'lightblue' : 'white',
-            border: '1px solid gray',
-            borderRadius: '4px',
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'space-between',
-            ...provided.draggableProps.style,
-          }}
-        >
+          style={{ backgroundColor: snapshot.isDragging ? 'lightblue' : 'white', ...provided.draggableProps.style, }}>
           <div onBlur={handleChange}>
             {cardText}
           </div>
-          <button onClick={openModal}>Edit</button>
+          <a href="#" onClick={openModal}><VscEdit/></a>
         </div>
 
         {/* Modal */}
         {isEditing && (
-          <div
-            style={{
-              position: 'fixed',
-              top: '0',
-              left: '0',
-              width: '100%',
-              height: '100%',
-              background: 'rgba(0, 0, 0, 0.5)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <div
-              style={{
-                background: 'white',
-                padding: '20px',
-                borderRadius: '4px',
-                width: '300px',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              <h2>Edit Description</h2>
-              <input type="text" value={cardText} onChange={(e) => setCardText(e.target.value)}
-                     style={{ marginBottom: '10px', width: '100%', padding: '8px', borderRadius: '4px' }}/>
-              <button onClick={handleSave}>Save</button>
-              <button onClick={closeModal}>Cancel</button>
-            </div>
-          </div>
+          <Transition appear show={true} as={Fragment}>
+            <Dialog as="div" className="relative z-10" onClose={closeModal}>
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0">
+                <div className="fixed inset-0 bg-black bg-opacity-25"/>
+              </Transition.Child>
+
+              <div className="fixed inset-0 overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                  <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0 scale-95"
+                    enterTo="opacity-100 scale-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100 scale-100"
+                    leaveTo="opacity-0 scale-95">
+                    <Dialog.Panel
+                      className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                      <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                        Add New Task
+                      </Dialog.Title>
+                      <div className="mt-2">
+                        <input type="text" value={cardText} onChange={(e) => setCardText(e.target.value)}
+                               style={{ marginBottom: '10px', width: '100%', padding: '8px', borderRadius: '4px' }}/>
+                      </div>
+                      <div className="mt-4 flex space-x-5">
+                        <button
+                          type="button"
+                          className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          onClick={handleSave}>
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex justify-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          onClick={closeModal}>
+                          Cancel
+                        </button>
+                      </div>
+                    </Dialog.Panel>
+                  </Transition.Child>
+                </div>
+              </div>
+            </Dialog>
+          </Transition>
       )}
     </>
   )}

@@ -4,7 +4,7 @@
 @import 'tailwindcss/utilities';
 
 /* Add your custom styles here */
-.custom-dragable-card {
+.custom-column {
   border: 1px solid gray;
   border-radius: 10px;
   padding: 8px;
@@ -15,4 +15,15 @@
   flex-direction: column;
   align-items: center;
   background: lightskyblue;
+}
+
+.custom-draggable-card {
+  user-select: none;
+  padding: 16px;
+  margin: 8px;
+  border: 1px solid gray;
+  border-radius: 15px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
 }
