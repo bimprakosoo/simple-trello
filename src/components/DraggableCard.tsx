@@ -3,6 +3,7 @@ import { Draggable } from 'react-beautiful-dnd';
 import { updateCardDescription } from "@/firebase/firebaseUtils";
 import { VscEdit } from "react-icons/vsc";
 import {Dialog, Transition} from "@headlessui/react";
+import { useRouter } from 'next/router';
 
 interface DraggableCardProps {
   draggableId: string;
@@ -14,6 +15,7 @@ interface DraggableCardProps {
 const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text, id }) => {
   const [cardText, setCardText] = useState(text);
   const [isEditing, setIsEditing] = useState(false);
+  const router = useRouter();
 
   const handleChange = (event: React.ChangeEvent<HTMLDivElement>) => {
     setCardText(event.target.innerText);
@@ -27,10 +29,11 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text,
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (action: any) => {
     try {
-      await updateCardDescription({ id, draggableId, cardText }); // Call the function
+      await updateCardDescription({ id, draggableId, cardText, action }); // Call the function
       setIsEditing(false); // Close the modal after updating the description
+      router.reload();
     } catch (error) {
       console.error('Error updating card description:', error);
     }
@@ -89,8 +92,14 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ draggableId, index, text,
                         <button
                           type="button"
                           className="inline-flex justify-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                          onClick={handleSave}>
+                          onClick={() => handleSave('edit')}>
                           Save
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex justify-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          onClick={() => handleSave('delete')}>
+                          Delete
                         </button>
                         <button
                           type="button"
