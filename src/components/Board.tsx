@@ -1,10 +1,11 @@
-import React, {useEffect, useState, Fragment} from "react";
+import React, {useEffect, useState, Fragment, ReactNode} from "react";
 import "tailwindcss/tailwind.css";
 import {DragDropContext, DropResult, Droppable} from "react-beautiful-dnd";
 import dynamic from "next/dynamic";
 import {updateColumnCards, addCard, fetchDataColumn} from "@/firebase/firebaseUtils";
 import {Dialog, Transition} from "@headlessui/react";
 import '../../assets/css/style.css';
+import { GrNotes, GrInProgress, GrCheckboxSelected } from "react-icons/gr";
 
 interface Card {
   id: string;
@@ -21,10 +22,19 @@ interface Props {
   initialColumns: Column[];
 }
 
+interface ColumnIcons {
+  [key: string]: ReactNode;
+}
+
 const Board: React.FC<Props> = ({initialColumns}) => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [newCardDescription, setNewCardDescription] = useState<string>('');
+  const columnIcons: ColumnIcons = {
+    todo: <GrNotes/>,
+    progress: <GrInProgress/>,
+    done: <GrCheckboxSelected/>
+  }
 
   const handleDragEnd = (result: DropResult) => {
     const {source, destination} = result;
@@ -112,9 +122,9 @@ const Board: React.FC<Props> = ({initialColumns}) => {
       const doneCards = await fetchDataColumn('done');
 
       const updatedColumns = [
-        {id: 'todo', title: 'Todo', cards: todoCards},
-        {id: 'progress', title: 'Progress', cards: progressCards},
-        {id: 'done', title: 'Done', cards: doneCards},
+        {id: 'todo', title: 'Todo', cards: todoCards, icon: GrNotes},
+        {id: 'progress', title: 'Progress', cards: progressCards, icon: GrInProgress},
+        {id: 'done', title: 'Done', cards: doneCards, icon: GrCheckboxSelected},
       ];
       setColumns(updatedColumns);
     };
@@ -133,7 +143,10 @@ const Board: React.FC<Props> = ({initialColumns}) => {
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className="custom-column">
-                  <h3>{column.title}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {columnIcons[column.id]}
+                    <h3>{column.title}</h3>
+                  </div>
                   {column?.cards?.map((card, index) => (
                     <DynamicDraggable key={card.id} draggableId={card.id} index={index} text={card.text} id={card.id}/>
                   ))}
